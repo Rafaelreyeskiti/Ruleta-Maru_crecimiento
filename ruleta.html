@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorteo de Instagram</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        
+        * { 
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        /* Ruleta con velocidad LINEAL CONSTANTE */
+        #wheelSVG {
+            filter: drop-shadow(0 25px 50px rgba(0,0,0,0.4));
+            transition-property: transform;
+            transition-timing-function: linear; /* VELOCIDAD CONSTANTE */
+        }
+        
+        .winner-reveal {
+            animation: revealWinner 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        @keyframes revealWinner {
+            0% { 
+                opacity: 0; 
+                transform: scale(0.3) translateY(-100px); 
+            }
+            60% { 
+                transform: scale(1.1) translateY(0); 
+            }
+            100% { 
+                opacity: 1; 
+                transform: scale(1) translateY(0); 
+            }
+        }
+        
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+    
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        
+        <!-- HEADER -->
+        <div class="text-center mb-8">
+            <h1 class="text-5xl font-bold text-white mb-3">
+                🎯 Sorteo de Instagram
+            </h1>
+            <p class="text-white/90 text-lg">
+                Total de participantes: <span id="totalParticipants" class="font-bold">0</span>
+            </p>
+        </div>
+
+        <!-- AGREGAR PARTICIPANTE -->
+        <div class="bg-white/95 backdrop-blur rounded-2xl shadow-2xl p-8 mb-6">
+            <div class="flex gap-3">
+                <input 
+                    type="text" 
+                    id="usernameInput" 
+                    placeholder="@nombre_usuario"
+                    class="flex-1 px-6 py-4 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:outline-none text-lg"
+                >
+                <button 
+                    onclick="agregarParticipante()" 
+                    class="px-10 py-4 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition text-lg"
+                >
+                    Agregar
+                </button>
+            </div>
+        </div>
+
+        <!-- RULETA -->
+        <div class="bg-white/95 backdrop-blur rounded-2xl shadow-2xl p-8 mb-6">
+            <div class="flex flex-col items-center">
+                
+                <!-- Ruleta visual -->
+                <div class="relative mb-8">
+                    <!-- Indicador fijo -->
+                    <div class="absolute -top-6 left-1/2 -translate-x-1/2 z-20">
+                        <div class="w-0 h-0 border-l-[20px] border-r-[20px] border-t-[35px] border-l-transparent border-r-transparent border-t-red-500 drop-shadow-xl"></div>
+                    </div>
+                    
+                    <svg id="wheelSVG" width="500" height="500" viewBox="0 0 500 500">
+                        <!-- Renderizado dinámico con TODOS los nombres -->
+                    </svg>
+                    
+                    <!-- Centro -->
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-white rounded-full shadow-2xl flex items-center justify-center text-3xl z-10 border-4 border-gray-200">
+                        🎯
+                    </div>
+                </div>
+
+                <!-- Spinner durante sorteo -->
+                <div id="loadingSpinner" class="hidden flex flex-col items-center mb-6">
+                    <div class="spinner mb-4"></div>
+                    <p class="text-gray-600 font-medium text-lg">Sorteando...</p>
+                </div>
+
+                <!-- Botón de sorteo -->
+                <button 
+                    id="drawButton"
+                    onclick="iniciarSorteo()" 
+                    class="mb-6 px-16 py-5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl font-bold text-2xl hover:from-green-600 hover:to-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-2xl"
+                >
+                    🎲 GIRAR
+                </button>
+
+                <!-- Ganador -->
+                <div id="winnerContainer"></div>
+            </div>
+        </div>
+
+        <!-- LISTA DE PARTICIPANTES -->
+        <div class="bg-white/95 backdrop-blur rounded-2xl shadow-2xl p-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">
+                👥 Participantes
+            </h2>
+            <div id="participantsList" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
+                <!-- Renderizado dinámico -->
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // =============================================================================
+        // CONFIGURACIÓN
+        // =============================================================================
+        const SUPABASE_URL = 'https://xqborhwvvgjkkboskqjo.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhxYm9yaHd2dmdqa2tib3NrcWpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzI2NzcsImV4cCI6MjA4MjE0ODY3N30.tJrpg3fX_mUXBYrW7asc78GhrakCcvRpgI6W5y5JJlM';
+        
+        let participantes = [];
+        let sorteando = false;
+        let anguloActual = 0;
+        
+        // Paleta de colores variados
+        const COLORES = [
+            '#FF6B9D', '#C44569', '#FFA07A', '#98D8C8', '#6C5CE7', '#A29BFE',
+            '#FD79A8', '#FDCB6E', '#74B9FF', '#FF7675', '#00B894', '#55E6C1',
+            '#FDA7DF', '#F8B500', '#5F27CD', '#00D2D3', '#FF6348', '#C23616',
+            '#0ABDE3', '#10AC84', '#EE5A6F', '#F79F1F', '#A3CB38', '#1289A7'
+        ];
+        
+        // =============================================================================
+        // SELECCIÓN JUSTA (crypto.getRandomValues)
+        // =============================================================================
+        function seleccionarGanadorSeguro(array) {
+            const buffer = new Uint32Array(1);
+            crypto.getRandomValues(buffer);
+            const indice = buffer[0] % array.length;
+            return { ganador: array[indice], indice };
+        }
+        
+        // =============================================================================
+        // SUPABASE
+        // =============================================================================
+        async function fetchSupabase(endpoint, options = {}) {
+            const url = `${SUPABASE_URL}/rest/v1/${endpoint}`;
+            const headers = {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=representation',
+                ...options.headers
+            };
+            
+            const response = await fetch(url, { ...options, headers });
+            if (!response.ok) throw new Error(`Error ${response.status}`);
+            
+            const text = await response.text();
+            return text ? JSON.parse(text) : [];
+        }
+        
+        async function cargarParticipantes() {
+            try {
+                const data = await fetchSupabase('usuarios_instagram?select=*&order=created_at.asc');
+                participantes = data || [];
+                renderizarTodo();
+            } catch (err) {
+                console.error('Error al cargar:', err);
+            }
+        }
+        
+        async function agregarParticipante() {
+            const input = document.getElementById('usernameInput');
+            const username = input.value.trim();
+            
+            if (!username) return;
+            
+            try {
+                await fetchSupabase('usuarios_instagram', {
+                    method: 'POST',
+                    body: JSON.stringify({ username })
+                });
+                
+                input.value = '';
+                await cargarParticipantes();
+            } catch (err) {
+                console.error('Error al agregar:', err);
+            }
+        }
+        
+        async function eliminarGanador(ganador) {
+            try {
+                await fetchSupabase(`usuarios_instagram?id=eq.${ganador.id}`, {
+                    method: 'DELETE'
+                });
+            } catch (err) {
+                console.error('Error al eliminar:', err);
+            }
+        }
+        
+        // =============================================================================
+        // RENDERIZADO DE RULETA (TODOS LOS NOMBRES REALES)
+        // =============================================================================
+        function renderizarRuleta() {
+            const svg = document.getElementById('wheelSVG');
+            svg.innerHTML = '';
+            
+            const centerX = 250;
+            const centerY = 250;
+            const radius = 240;
+            
+            if (participantes.length === 0) {
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', centerX);
+                circle.setAttribute('cy', centerY);
+                circle.setAttribute('r', radius);
+                circle.setAttribute('fill', '#e5e7eb');
+                svg.appendChild(circle);
+                
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', centerX);
+                text.setAttribute('y', centerY);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('dominant-baseline', 'middle');
+                text.setAttribute('fill', '#9ca3af');
+                text.setAttribute('font-size', '20');
+                text.setAttribute('font-weight', '600');
+                text.textContent = 'Sin participantes';
+                svg.appendChild(text);
+                return;
+            }
+            
+            const totalParticipantes = participantes.length;
+            const anguloSegmento = 360 / totalParticipantes;
+            
+            // Tamaño de fuente adaptativo según cantidad de participantes
+            let fontSize;
+            if (totalParticipantes <= 20) fontSize = 14;
+            else if (totalParticipantes <= 50) fontSize = 12;
+            else if (totalParticipantes <= 100) fontSize = 10;
+            else if (totalParticipantes <= 200) fontSize = 8;
+            else if (totalParticipantes <= 400) fontSize = 7;
+            else fontSize = 6;
+            
+            // Dibujar cada segmento con nombre real
+            participantes.forEach((participante, i) => {
+                const anguloInicio = i * anguloSegmento - 90; // -90 para empezar arriba
+                const anguloFin = anguloInicio + anguloSegmento;
+                
+                const x1 = centerX + radius * Math.cos(anguloInicio * Math.PI / 180);
+                const y1 = centerY + radius * Math.sin(anguloInicio * Math.PI / 180);
+                const x2 = centerX + radius * Math.cos(anguloFin * Math.PI / 180);
+                const y2 = centerY + radius * Math.sin(anguloFin * Math.PI / 180);
+                
+                // Segmento
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const largeArc = anguloSegmento > 180 ? 1 : 0;
+                path.setAttribute('d', `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`);
+                path.setAttribute('fill', COLORES[i % COLORES.length]);
+                path.setAttribute('stroke', 'white');
+                path.setAttribute('stroke-width', totalParticipantes > 100 ? '1' : '2');
+                svg.appendChild(path);
+                
+                // Texto con nombre real
+                const textAngulo = anguloInicio + anguloSegmento / 2;
+                const distanciaTexto = totalParticipantes > 200 ? 0.75 : 0.7;
+                const textX = centerX + (radius * distanciaTexto) * Math.cos(textAngulo * Math.PI / 180);
+                const textY = centerY + (radius * distanciaTexto) * Math.sin(textAngulo * Math.PI / 180);
+                
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', textX);
+                text.setAttribute('y', textY);
+                text.setAttribute('fill', 'white');
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('dominant-baseline', 'middle');
+                text.setAttribute('font-size', fontSize);
+                text.setAttribute('font-weight', '700');
+                text.setAttribute('transform', `rotate(${textAngulo}, ${textX}, ${textY})`);
+                
+                // Truncar nombre si es muy largo
+                let displayName = participante.username;
+                if (totalParticipantes > 300 && displayName.length > 12) {
+                    displayName = displayName.substring(0, 10) + '..';
+                } else if (totalParticipantes > 150 && displayName.length > 15) {
+                    displayName = displayName.substring(0, 13) + '..';
+                }
+                
+                text.textContent = `@${displayName}`;
+                svg.appendChild(text);
+            });
+            
+            // Centro
+            const centerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            centerCircle.setAttribute('cx', centerX);
+            centerCircle.setAttribute('cy', centerY);
+            centerCircle.setAttribute('r', 40);
+            centerCircle.setAttribute('fill', 'white');
+            centerCircle.setAttribute('stroke', '#d1d5db');
+            centerCircle.setAttribute('stroke-width', 4);
+            svg.appendChild(centerCircle);
+        }
+        
+        // =============================================================================
+        // ANIMACIÓN (VELOCIDAD CONSTANTE + SENTIDO HORARIO)
+        // =============================================================================
+        function calcularRotacionHoraria(indiceGanador, totalParticipantes) {
+            const anguloSegmento = 360 / totalParticipantes;
+            const anguloGanador = indiceGanador * anguloSegmento;
+            
+            // Giros completos: 6-8 vueltas
+            const girosCompletos = 6 + Math.floor(Math.random() * 3);
+            
+            // SENTIDO HORARIO: suma de ángulos (positivo)
+            // Ajustar para que termine exactamente en el ganador
+            const anguloFinal = anguloActual + (girosCompletos * 360) + (360 - anguloGanador) + (anguloSegmento / 2);
+            
+            return anguloFinal;
+        }
+        
+        function animarRuletaLineal(anguloFinal, duracion) {
+            const svg = document.getElementById('wheelSVG');
+            svg.style.transitionDuration = `${duracion}s`;
+            svg.style.transform = `rotate(${anguloFinal}deg)`;
+            anguloActual = anguloFinal % 360;
+        }
+        
+        // =============================================================================
+        // SORTEO
+        // =============================================================================
+        async function iniciarSorteo() {
+            if (sorteando || participantes.length === 0) return;
+            
+            sorteando = true;
+            
+            const btn = document.getElementById('drawButton');
+            btn.disabled = true;
+            btn.textContent = 'Sorteando...';
+            
+            document.getElementById('loadingSpinner').classList.remove('hidden');
+            document.getElementById('winnerContainer').innerHTML = '';
+            
+            // Pequeña pausa antes de seleccionar
+            await new Promise(r => setTimeout(r, 800));
+            
+            // SELECCIONAR GANADOR (método justo)
+            const { ganador, indice } = seleccionarGanadorSeguro(participantes);
+            
+            // Calcular rotación hacia ganador
+            const anguloFinal = calcularRotacionHoraria(indice, participantes.length);
+            const duracionGiro = 6; // 6 segundos constantes
+            
+            document.getElementById('loadingSpinner').classList.add('hidden');
+            
+            // ANIMAR (velocidad lineal constante)
+            animarRuletaLineal(anguloFinal, duracionGiro);
+            
+            // Esperar a que termine la animación
+            await new Promise(r => setTimeout(r, (duracionGiro * 1000) + 500));
+            
+            // Mostrar ganador
+            mostrarGanador(ganador);
+            
+            // Eliminar de BD
+            await eliminarGanador(ganador);
+            await cargarParticipantes();
+            
+            // Resetear
+            sorteando = false;
+            btn.disabled = false;
+            btn.textContent = '🎲 GIRAR';
+        }
+        
+        function mostrarGanador(ganador) {
+            const container = document.getElementById('winnerContainer');
+            container.innerHTML = `
+                <div class="winner-reveal bg-gradient-to-br from-yellow-400 via-orange-400 to-red-500 text-white rounded-3xl p-12 text-center max-w-2xl shadow-2xl border-4 border-yellow-300">
+                    <div class="text-8xl mb-6">🏆</div>
+                    <h3 class="text-4xl font-bold mb-4">¡GANADOR!</h3>
+                    <p class="text-6xl font-black">@${ganador.username}</p>
+                </div>
+            `;
+        }
+        
+        // =============================================================================
+        // UI
+        // =============================================================================
+        function renderizarParticipantes() {
+            const container = document.getElementById('participantsList');
+            document.getElementById('totalParticipants').textContent = participantes.length;
+            
+            if (participantes.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-12 text-gray-400">
+                        <div class="text-6xl mb-4">👥</div>
+                        <p class="text-xl">No hay participantes</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = participantes.map((p, i) => `
+                <div class="bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl p-3 text-center font-semibold text-gray-800">
+                    <div class="text-xs text-gray-500 mb-1">#${i + 1}</div>
+                    <div class="text-sm truncate">@${p.username}</div>
+                </div>
+            `).join('');
+        }
+        
+        function renderizarTodo() {
+            renderizarRuleta();
+            renderizarParticipantes();
+        }
+        
+        // =============================================================================
+        // INIT
+        // =============================================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('usernameInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') agregarParticipante();
+            });
+            cargarParticipantes();
+        });
+    </script>
+</body>
+</html>
