@@ -1,459 +1,812 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sorteo de Instagram</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
-        
-        * { 
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-        
-        /* Ruleta con velocidad LINEAL CONSTANTE */
-        #wheelSVG {
-            filter: drop-shadow(0 25px 50px rgba(0,0,0,0.4));
-            transition-property: transform;
-            transition-timing-function: linear; /* VELOCIDAD CONSTANTE */
-        }
-        
-        .winner-reveal {
-            animation: revealWinner 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        
-        @keyframes revealWinner {
-            0% { 
-                opacity: 0; 
-                transform: scale(0.3) translateY(-100px); 
-            }
-            60% { 
-                transform: scale(1.1) translateY(0); 
-            }
-            100% { 
-                opacity: 1; 
-                transform: scale(1) translateY(0); 
-            }
-        }
-        
-        .spinner {
-            border: 4px solid rgba(255,255,255,0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-    </style>
-</head>
-<body class="antialiased">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sorteo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Fraunces:opsz,wght@9..144,600..900&display=swap');
+
+    :root{
+      --mint: #79B59C;
+      --teal: #2C9F90;
+      --deep: #0B4F49;
+
+      --teal-1: #8BE2D2;
+      --teal-2: #2C9F90;
+      --teal-3: #0B4F49;
+    }
+
+    * { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+
+    body{
+      min-height:100vh;
+      background:
+        radial-gradient(circle at 75% 15%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.04) 35%, rgba(255,255,255,0) 60%),
+        linear-gradient(135deg, #1f7f74 0%, #2C9F90 35%, #79B59C 100%);
+      position:relative;
+      overflow-x:hidden;
+    }
+    body::before{
+      content:"";
+      position:fixed;
+      inset:-35%;
+      background:
+        repeating-conic-gradient(from 0deg,
+          rgba(255,255,255,.10) 0deg 10deg,
+          rgba(255,255,255,0) 10deg 22deg);
+      opacity:.12;
+      filter: blur(1px);
+      transform: rotate(-10deg);
+      pointer-events:none;
+    }
+    body::after{
+      content:"";
+      position:fixed;
+      inset:0;
+      background: radial-gradient(circle at 20% 90%, rgba(0,0,0,.22), rgba(0,0,0,0) 55%);
+      pointer-events:none;
+      opacity:.45;
+    }
+
+    /* ✅ Título más lindo */
+    .hero-title{
+      font-family: "Fraunces", serif;
+      font-weight: 850;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      background: linear-gradient(90deg, rgba(255,255,255,0.98), rgba(255,255,255,0.72));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 18px 40px rgba(0,0,0,0.18);
+    }
+    .hero-sub{
+      color: rgba(255,255,255,.86);
+      font-weight: 700;
+      text-shadow: 0 12px 28px rgba(0,0,0,0.18);
+    }
+    .hero-line{
+      height: 3px;
+      width: 180px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(255,255,255,.0), rgba(255,255,255,.85), rgba(255,255,255,.0));
+      opacity: .85;
+
+      margin-top: -140px;
+    }
+
+    #wheelSVG{
+      transition-property: transform;
+      transition-timing-function: linear;
+    }
+
+    .panel{
+      background: rgba(255,255,255,.86);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(121,181,156,.35);
+      box-shadow: 0 25px 70px rgba(0,0,0,.18);
+      border-radius: 22px;
+    }
+
+    .wheel-frame{
+      border-radius: 9999px;
+      padding: 14px;
+      background:
+        radial-gradient(circle at 30% 20%, rgba(255,255,255,.38), rgba(255,255,255,0) 60%),
+        radial-gradient(circle at 70% 80%, rgba(0,0,0,.18), rgba(0,0,0,0) 62%),
+        rgba(255,255,255,.12);
+      box-shadow:
+        0 30px 70px rgba(0,0,0,.28),
+        inset 0 2px 0 rgba(255,255,255,.35);
+    }
+
+    /* ✅ Logo SOLO y MUCHO más grande */
+    .brand-logo{
+      width: 500px;
+      height: 500px;
+      object-fit: contain;
+      filter: drop-shadow(0 24px 40px rgba(0,0,0,.28));
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+    @media (min-width: 768px){
+      .brand-logo{
+        width: 500px;
+        height: 500px;
+      }
+    }
+
+    /* Puntero */
+    .pointer{
+      width: 90px;
+      height: 90px;
+      position: relative;
+      filter: drop-shadow(0 18px 18px rgba(0,0,0,.28));
+      transform-origin: 50% 18%;
+    }
+    .pointer .tip{
+      position:absolute;
+      left:50%;
+      top:16px;
+      transform:translateX(-50%);
+      width:0;height:0;
+      border-left:18px solid transparent;
+      border-right:18px solid transparent;
+      border-top:52px solid #ffcc33;
+    }
+    .pointer .tip::after{
+      content:"";
+      position:absolute;
+      left:50%;
+      top:-49px;
+      transform:translateX(-50%);
+      width:0;height:0;
+      border-left:12px solid transparent;
+      border-right:12px solid transparent;
+      border-top:40px solid rgba(255,255,255,.35);
+    }
+    .pointer .cap{
+      position:absolute;
+      left:50%;
+      top:4px;
+      transform:translateX(-50%);
+      width:64px;height:64px;
+      border-radius:999px;
+      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #d7dde7 35%, #1b2a57 100%);
+      border: 2px solid rgba(255,255,255,.6);
+      box-shadow: inset 0 2px 0 rgba(255,255,255,.5);
+    }
+    .pointer .dot{
+      position:absolute;
+      left:50%;
+      top:30px;
+      transform:translateX(-50%);
+      width:12px;height:12px;
+      border-radius:999px;
+      background: radial-gradient(circle at 30% 30%, #fff, #0b1020);
+      opacity:.95;
+    }
+    .pointer-tick{ animation: pointerTick .22s ease-in-out 1; }
+    @keyframes pointerTick{
+      0%   { transform: rotate(0deg); }
+      30%  { transform: rotate(-10deg); }
+      60%  { transform: rotate(8deg); }
+      100% { transform: rotate(0deg); }
+    }
+
+    /* ✅ FIX: SPIN circular y sin “cuadro” que tapa colores */
+    .spin-center{
+      width: 110px;
+      aspect-ratio: 1 / 1;      
+      border-radius: 50%;
+      overflow: hidden;          
+      display:flex;
+      align-items:center;
+      justify-content:center;
+
+      color:#fff;
+      font-weight: 900;
+      letter-spacing: .10em;
+      text-transform: uppercase;
+
+      background:
+        radial-gradient(circle at 30% 25%, rgba(255,255,255,.50) 0%, rgba(255,255,255,0) 42%),
+        radial-gradient(circle at 35% 30%, var(--teal-1) 0%, var(--teal-2) 52%, var(--teal-3) 100%);
+
+      /*border: 7px solid rgba(255,255,255,.30);*/
+      box-shadow:
+        0 22px 40px rgba(0,0,0,.18),
+        0 0 0 10px rgba(44,159,144,.10),
+        inset 0 2px 0 rgba(255,255,255,.35);
+
+      position: relative;
+      user-select:none;
+    }
     
-    <div class="container mx-auto px-4 py-8 max-w-7xl">
-        
-        <!-- HEADER -->
-        <div class="text-center mb-8">
-            <h1 class="text-5xl font-bold text-white mb-3">
-                🎯 Sorteo de Instagram
-            </h1>
-            <p class="text-white/90 text-lg">
-                Total de participantes: <span id="totalParticipants" class="font-bold">0</span>
-            </p>
-        </div>
+    .spin-center::after{
+      content:"";
+      position:absolute;
+      inset: 10px;             /* ✅ brillo adentro del círculo, no afuera */
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.35), rgba(255,255,255,0) 70%);
+      transform: translateY(-8px);
+      opacity:.8;
+      pointer-events:none;
+    } 
+    @media (min-width: 768px){
+      .spin-center{
+        width: 120px;
+      }
+    }
 
-        <!-- AGREGAR PARTICIPANTE -->
-        <div class="bg-white/95 backdrop-blur rounded-2xl shadow-2xl p-8 mb-6">
-            <div class="flex gap-3">
-                <input 
-                    type="text" 
-                    id="usernameInput" 
-                    placeholder="@nombre_usuario"
-                    class="flex-1 px-6 py-4 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:outline-none text-lg"
-                >
-                <button 
-                    onclick="agregarParticipante()" 
-                    class="px-10 py-4 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition text-lg"
-                >
-                    Agregar
-                </button>
-            </div>
-        </div>
+    .spinner{
+      border: 4px solid rgba(0,0,0,0.10);
+      border-top-color: rgba(11,79,73,.95);
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-        <!-- RULETA -->
-        <div class="bg-white/95 backdrop-blur rounded-2xl shadow-2xl p-8 mb-6">
-            <div class="flex flex-col items-center">
-                
-                <!-- Ruleta visual -->
-                <div class="relative mb-8">
-                    <!-- Indicador fijo -->
-                    <div class="absolute -top-6 left-1/2 -translate-x-1/2 z-20">
-                        <div class="w-0 h-0 border-l-[20px] border-r-[20px] border-t-[35px] border-l-transparent border-r-transparent border-t-red-500 drop-shadow-xl"></div>
-                    </div>
-                    
-                    <svg id="wheelSVG" width="500" height="500" viewBox="0 0 500 500">
-                        <!-- Renderizado dinámico con TODOS los nombres -->
-                    </svg>
-                    
-                    <!-- Centro -->
-                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-white rounded-full shadow-2xl flex items-center justify-center text-3xl z-10 border-4 border-gray-200">
-                        🎯
-                    </div>
-                </div>
+    .winner-reveal{ animation: revealWinner .8s cubic-bezier(.34,1.56,.64,1); }
+    @keyframes revealWinner{
+      0%{ opacity:0; transform: scale(.75) translateY(-18px); }
+      100%{ opacity:1; transform: scale(1) translateY(0); }
+    }
 
-                <!-- Spinner durante sorteo -->
-                <div id="loadingSpinner" class="hidden flex flex-col items-center mb-6">
-                    <div class="spinner mb-4"></div>
-                    <p class="text-gray-600 font-medium text-lg">Sorteando...</p>
-                </div>
+    .btn-brand{
+      background: linear-gradient(90deg, var(--teal), var(--mint));
+      box-shadow: 0 18px 40px rgba(11,79,73,.22);
+    }
+    .btn-brand:hover{ filter: brightness(0.98); }
+    .btn-brand:active{ transform: translateY(1px); }
 
-                <!-- Botón de sorteo -->
-                <button 
-                    id="drawButton"
-                    onclick="iniciarSorteo()" 
-                    class="mb-6 px-16 py-5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl font-bold text-2xl hover:from-green-600 hover:to-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-2xl"
-                >
-                    🎲 GIRAR
-                </button>
+    .btn-brand-strong{
+      background: linear-gradient(90deg, var(--deep), var(--teal));
+      box-shadow: 0 22px 55px rgba(11,79,73,.25);
+    }
 
-                <!-- Ganador -->
-                <div id="winnerContainer"></div>
-            </div>
-        </div>
+    .input-brand:focus{
+      border-color: rgba(44,159,144,.65);
+      box-shadow: 0 0 0 4px rgba(44,159,144,.18);
+    }
+  </style>
+</head>
 
-        <!-- LISTA DE PARTICIPANTES -->
-        <div class="bg-white/95 backdrop-blur rounded-2xl shadow-2xl p-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">
-                👥 Participantes
-            </h2>
-            <div id="participantsList" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
-                <!-- Renderizado dinámico -->
-            </div>
-        </div>
+<body class="antialiased">
+  <div class="container mx-auto px-4 py-10 max-w-7xl relative z-10">
 
+    <!-- HEADER -->
+    <div class="text-center mb-8 flex flex-col items-center gap-4">
+      <img id="brandLogo" alt="Logo" class="brand-logo" src="" />
+      <div class="hero-line"></div>
+
+      <h1 class="hero-title text-5xl md:text-6xl">Sorteo</h1>
+
+      <p class="hero-sub text-base md:text-lg">
+        Participantes: <span id="totalParticipants" class="font-extrabold">0</span>
+      </p>
     </div>
 
-    <script>
-        // =============================================================================
-        // CONFIGURACIÓN
-        // =============================================================================
-        const SUPABASE_URL = 'https://xqborhwvvgjkkboskqjo.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhxYm9yaHd2dmdqa2tib3NrcWpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzI2NzcsImV4cCI6MjA4MjE0ODY3N30.tJrpg3fX_mUXBYrW7asc78GhrakCcvRpgI6W5y5JJlM';
-        
-        let participantes = [];
-        let sorteando = false;
-        let anguloActual = 0;
-        
-        // Paleta de colores variados
-        const COLORES = [
-            '#FF6B9D', '#C44569', '#FFA07A', '#98D8C8', '#6C5CE7', '#A29BFE',
-            '#FD79A8', '#FDCB6E', '#74B9FF', '#FF7675', '#00B894', '#55E6C1',
-            '#FDA7DF', '#F8B500', '#5F27CD', '#00D2D3', '#FF6348', '#C23616',
-            '#0ABDE3', '#10AC84', '#EE5A6F', '#F79F1F', '#A3CB38', '#1289A7'
-        ];
-        
-        // =============================================================================
-        // SELECCIÓN JUSTA (crypto.getRandomValues)
-        // =============================================================================
-        function seleccionarGanadorSeguro(array) {
-            const buffer = new Uint32Array(1);
-            crypto.getRandomValues(buffer);
-            const indice = buffer[0] % array.length;
-            return { ganador: array[indice], indice };
-        }
-        
-        // =============================================================================
-        // SUPABASE
-        // =============================================================================
-        async function fetchSupabase(endpoint, options = {}) {
-            const url = `${SUPABASE_URL}/rest/v1/${endpoint}`;
-            const headers = {
-                'apikey': SUPABASE_KEY,
-                'Authorization': `Bearer ${SUPABASE_KEY}`,
-                'Content-Type': 'application/json',
-                'Prefer': 'return=representation',
-                ...options.headers
-            };
-            
-            const response = await fetch(url, { ...options, headers });
-            if (!response.ok) throw new Error(`Error ${response.status}`);
-            
-            const text = await response.text();
-            return text ? JSON.parse(text) : [];
-        }
-        
-        async function cargarParticipantes() {
-            try {
-                const data = await fetchSupabase('usuarios_instagram?select=*&order=created_at.asc');
-                participantes = data || [];
-                renderizarTodo();
-            } catch (err) {
-                console.error('Error al cargar:', err);
-            }
-        }
-        
-        async function agregarParticipante() {
-            const input = document.getElementById('usernameInput');
-            const username = input.value.trim();
-            
-            if (!username) return;
-            
-            try {
-                await fetchSupabase('usuarios_instagram', {
-                    method: 'POST',
-                    body: JSON.stringify({ username })
-                });
-                
-                input.value = '';
-                await cargarParticipantes();
-            } catch (err) {
-                console.error('Error al agregar:', err);
-            }
-        }
-        
-        async function eliminarGanador(ganador) {
-            try {
-                await fetchSupabase(`usuarios_instagram?id=eq.${ganador.id}`, {
-                    method: 'DELETE'
-                });
-            } catch (err) {
-                console.error('Error al eliminar:', err);
-            }
-        }
-        
-        // =============================================================================
-        // RENDERIZADO DE RULETA (TODOS LOS NOMBRES REALES)
-        // =============================================================================
-        function renderizarRuleta() {
-            const svg = document.getElementById('wheelSVG');
-            svg.innerHTML = '';
-            
-            const centerX = 250;
-            const centerY = 250;
-            const radius = 240;
-            
-            if (participantes.length === 0) {
-                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                circle.setAttribute('cx', centerX);
-                circle.setAttribute('cy', centerY);
-                circle.setAttribute('r', radius);
-                circle.setAttribute('fill', '#e5e7eb');
-                svg.appendChild(circle);
-                
-                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                text.setAttribute('x', centerX);
-                text.setAttribute('y', centerY);
-                text.setAttribute('text-anchor', 'middle');
-                text.setAttribute('dominant-baseline', 'middle');
-                text.setAttribute('fill', '#9ca3af');
-                text.setAttribute('font-size', '20');
-                text.setAttribute('font-weight', '600');
-                text.textContent = 'Sin participantes';
-                svg.appendChild(text);
-                return;
-            }
-            
-            const totalParticipantes = participantes.length;
-            const anguloSegmento = 360 / totalParticipantes;
-            
-            // Tamaño de fuente adaptativo según cantidad de participantes
-            let fontSize;
-            if (totalParticipantes <= 20) fontSize = 14;
-            else if (totalParticipantes <= 50) fontSize = 12;
-            else if (totalParticipantes <= 100) fontSize = 10;
-            else if (totalParticipantes <= 200) fontSize = 8;
-            else if (totalParticipantes <= 400) fontSize = 7;
-            else fontSize = 6;
-            
-            // Dibujar cada segmento con nombre real
-            participantes.forEach((participante, i) => {
-                const anguloInicio = i * anguloSegmento - 90; // -90 para empezar arriba
-                const anguloFin = anguloInicio + anguloSegmento;
-                
-                const x1 = centerX + radius * Math.cos(anguloInicio * Math.PI / 180);
-                const y1 = centerY + radius * Math.sin(anguloInicio * Math.PI / 180);
-                const x2 = centerX + radius * Math.cos(anguloFin * Math.PI / 180);
-                const y2 = centerY + radius * Math.sin(anguloFin * Math.PI / 180);
-                
-                // Segmento
-                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                const largeArc = anguloSegmento > 180 ? 1 : 0;
-                path.setAttribute('d', `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`);
-                path.setAttribute('fill', COLORES[i % COLORES.length]);
-                path.setAttribute('stroke', 'white');
-                path.setAttribute('stroke-width', totalParticipantes > 100 ? '1' : '2');
-                svg.appendChild(path);
-                
-                // Texto con nombre real
-                const textAngulo = anguloInicio + anguloSegmento / 2;
-                const distanciaTexto = totalParticipantes > 200 ? 0.75 : 0.7;
-                const textX = centerX + (radius * distanciaTexto) * Math.cos(textAngulo * Math.PI / 180);
-                const textY = centerY + (radius * distanciaTexto) * Math.sin(textAngulo * Math.PI / 180);
-                
-                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                text.setAttribute('x', textX);
-                text.setAttribute('y', textY);
-                text.setAttribute('fill', 'white');
-                text.setAttribute('text-anchor', 'middle');
-                text.setAttribute('dominant-baseline', 'middle');
-                text.setAttribute('font-size', fontSize);
-                text.setAttribute('font-weight', '700');
-                text.setAttribute('transform', `rotate(${textAngulo}, ${textX}, ${textY})`);
-                
-                // Truncar nombre si es muy largo
-                let displayName = participante.username;
-                if (totalParticipantes > 300 && displayName.length > 12) {
-                    displayName = displayName.substring(0, 10) + '..';
-                } else if (totalParticipantes > 150 && displayName.length > 15) {
-                    displayName = displayName.substring(0, 13) + '..';
-                }
-                
-                text.textContent = `@${displayName}`;
-                svg.appendChild(text);
-            });
-            
-            // Centro
-            const centerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            centerCircle.setAttribute('cx', centerX);
-            centerCircle.setAttribute('cy', centerY);
-            centerCircle.setAttribute('r', 40);
-            centerCircle.setAttribute('fill', 'white');
-            centerCircle.setAttribute('stroke', '#d1d5db');
-            centerCircle.setAttribute('stroke-width', 4);
-            svg.appendChild(centerCircle);
-        }
-        
-        // =============================================================================
-        // ANIMACIÓN (VELOCIDAD CONSTANTE + SENTIDO HORARIO)
-        // =============================================================================
-        function calcularRotacionHoraria(indiceGanador, totalParticipantes) {
-            const anguloSegmento = 360 / totalParticipantes;
-            const anguloGanador = indiceGanador * anguloSegmento;
-            
-            // Giros completos: 6-8 vueltas
-            const girosCompletos = 6 + Math.floor(Math.random() * 3);
-            
-            // SENTIDO HORARIO: suma de ángulos (positivo)
-            // Ajustar para que termine exactamente en el ganador
-            const anguloFinal = anguloActual + (girosCompletos * 360) + (360 - anguloGanador) + (anguloSegmento / 2);
-            
-            return anguloFinal;
-        }
-        
-        function animarRuletaLineal(anguloFinal, duracion) {
-            const svg = document.getElementById('wheelSVG');
-            svg.style.transitionDuration = `${duracion}s`;
-            svg.style.transform = `rotate(${anguloFinal}deg)`;
-            anguloActual = anguloFinal % 360;
-        }
-        
-        // =============================================================================
-        // SORTEO
-        // =============================================================================
-        async function iniciarSorteo() {
-            if (sorteando || participantes.length === 0) return;
-            
-            sorteando = true;
-            
-            const btn = document.getElementById('drawButton');
-            btn.disabled = true;
-            btn.textContent = 'Sorteando...';
-            
-            document.getElementById('loadingSpinner').classList.remove('hidden');
-            document.getElementById('winnerContainer').innerHTML = '';
-            
-            // Pequeña pausa antes de seleccionar
-            await new Promise(r => setTimeout(r, 800));
-            
-            // SELECCIONAR GANADOR (método justo)
-            const { ganador, indice } = seleccionarGanadorSeguro(participantes);
-            
-            // Calcular rotación hacia ganador
-            const anguloFinal = calcularRotacionHoraria(indice, participantes.length);
-            const duracionGiro = 6; // 6 segundos constantes
-            
-            document.getElementById('loadingSpinner').classList.add('hidden');
-            
-            // ANIMAR (velocidad lineal constante)
-            animarRuletaLineal(anguloFinal, duracionGiro);
-            
-            // Esperar a que termine la animación
-            await new Promise(r => setTimeout(r, (duracionGiro * 1000) + 500));
-            
-            // Mostrar ganador
-            mostrarGanador(ganador);
-            
-            // Eliminar de BD
-            await eliminarGanador(ganador);
-            await cargarParticipantes();
-            
-            // Resetear
-            sorteando = false;
-            btn.disabled = false;
-            btn.textContent = '🎲 GIRAR';
-        }
-        
-        function mostrarGanador(ganador) {
-            const container = document.getElementById('winnerContainer');
-            container.innerHTML = `
-                <div class="winner-reveal bg-gradient-to-br from-yellow-400 via-orange-400 to-red-500 text-white rounded-3xl p-12 text-center max-w-2xl shadow-2xl border-4 border-yellow-300">
-                    <div class="text-8xl mb-6">🏆</div>
-                    <h3 class="text-4xl font-bold mb-4">¡GANADOR!</h3>
-                    <p class="text-6xl font-black">@${ganador.username}</p>
-                </div>
-            `;
-        }
-        
-        // =============================================================================
-        // UI
-        // =============================================================================
-        function renderizarParticipantes() {
-            const container = document.getElementById('participantsList');
-            document.getElementById('totalParticipants').textContent = participantes.length;
-            
-            if (participantes.length === 0) {
-                container.innerHTML = `
-                    <div class="col-span-full text-center py-12 text-gray-400">
-                        <div class="text-6xl mb-4">👥</div>
-                        <p class="text-xl">No hay participantes</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            container.innerHTML = participantes.map((p, i) => `
-                <div class="bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl p-3 text-center font-semibold text-gray-800">
-                    <div class="text-xs text-gray-500 mb-1">#${i + 1}</div>
-                    <div class="text-sm truncate">@${p.username}</div>
-                </div>
-            `).join('');
-        }
-        
-        function renderizarTodo() {
-            renderizarRuleta();
-            renderizarParticipantes();
-        }
-        
-        // =============================================================================
-        // INIT
-        // =============================================================================
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('usernameInput').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') agregarParticipante();
-            });
-            cargarParticipantes();
+    <!-- Agregar participante -->
+    <div class="panel p-8 mb-6">
+      <div class="flex gap-3">
+        <input
+          type="text"
+          id="usernameInput"
+          placeholder="@nombre_usuario"
+          class="input-brand flex-1 px-6 py-4 border-2 border-emerald-200/60 rounded-xl focus:outline-none text-lg bg-white/90"
+        >
+        <button
+          onclick="agregarParticipante()"
+          class="btn-brand px-10 py-4 text-white rounded-xl font-extrabold transition text-lg"
+        >
+          Agregar
+        </button>
+      </div>
+    </div>
+
+    <!-- Ruleta -->
+    <div class="panel p-8 mb-6">
+      <div class="flex flex-col items-center">
+
+        <div class="relative mb-8">
+          <div class="absolute -top-8 left-1/2 -translate-x-1/2 z-30">
+            <div id="pointerEl" class="pointer">
+              <div class="tip"></div>
+              <div class="cap"></div>
+              <div class="dot"></div>
+            </div>
+          </div>
+
+          <div class="wheel-frame">
+            <svg id="wheelSVG" width="520" height="520" viewBox="0 0 520 520"></svg>
+          </div>
+
+          <!-- ✅ Wrapper sin fondo, solo para centrar -->
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none">
+            <div class="spin-center pointer-events-auto">Spin</div>
+          </div>
+        </div>
+
+        <div id="loadingSpinner" class="hidden flex flex-col items-center mb-6">
+          <div class="spinner mb-3"></div>
+          <p class="text-slate-700 font-extrabold text-lg">Sorteando...</p>
+        </div>
+
+        <button
+          id="drawButton"
+          onclick="iniciarSorteo()"
+          class="btn-brand-strong mb-6 px-16 py-5 text-white rounded-2xl font-black text-2xl transition disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          GIRAR
+        </button>
+
+        <div id="winnerContainer"></div>
+      </div>
+    </div>
+
+    <!-- Participantes -->
+    <div class="panel p-8">
+      <h2 class="text-2xl font-black mb-6" style="color: var(--deep);">Participantes</h2>
+      <div id="participantsList" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-96 overflow-y-auto"></div>
+    </div>
+  </div>
+
+  <script>
+    // ✅ Pon tu logo aquí: assets/logo.png
+    const LOGO_PATH = "./assets/logo.png";
+
+    const SUPABASE_URL = 'https://xqborhwvvgjkkboskqjo.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhxYm9yaHd2dmdqa2tib3NrcWpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzI2NzcsImV4cCI6MjA4MjE0ODY3N30.tJrpg3fX_mUXBYrW7asc78GhrakCcvRpgI6W5y5JJlM';
+
+    let participantes = [];
+    let sorteando = false;
+    let anguloActual = 0;
+
+    let blinkInterval = null;
+    let blinkPhase = 0;
+
+    const COLORES = [
+      '#FF3CA6', '#7C3AED', '#FF8A00', '#FF2B2B',
+      '#00C2FF', '#FFD400', '#00D95A', '#B400FF'
+    ];
+
+    // Logo
+    const brandLogoEl = document.getElementById('brandLogo');
+    brandLogoEl.src = LOGO_PATH;
+    brandLogoEl.onerror = () => { brandLogoEl.style.display = 'none'; };
+
+    // ============================================================================
+    // Comentarios (para mostrar con el ganador)
+    // ============================================================================
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function getWinnerComment(row) {
+      // ✅ Si tu columna tiene otro nombre, agrégalo aquí.
+      const keys = [
+        'comentario', 'comment', 'comentarios', 'texto', 'mensaje', 'message',
+        'caption', 'texto_comentario', 'comentario_ganador'
+      ];
+      for (const k of keys) {
+        if (row && typeof row[k] === 'string' && row[k].trim()) return row[k].trim();
+      }
+      return '';
+    }
+
+    function seleccionarGanadorSeguro(array) {
+      const buffer = new Uint32Array(1);
+      crypto.getRandomValues(buffer);
+      const indice = buffer[0] % array.length;
+      return { ganador: array[indice], indice };
+    }
+
+    async function fetchSupabase(endpoint, options = {}) {
+      const url = `${SUPABASE_URL}/rest/v1/${endpoint}`;
+      const headers = {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+        ...(options.headers || {})
+      };
+
+      const response = await fetch(url, { ...options, headers });
+      if (!response.ok) throw new Error(`Error ${response.status}`);
+      const text = await response.text();
+      return text ? JSON.parse(text) : [];
+    }
+
+    async function cargarParticipantes() {
+      try {
+        const data = await fetchSupabase('usuarios_instagram?select=*&order=created_at.asc');
+        participantes = data || [];
+        renderizarTodo();
+      } catch (err) {
+        console.error('Error al cargar:', err);
+      }
+    }
+
+    async function agregarParticipante() {
+      const input = document.getElementById('usernameInput');
+      const username = input.value.trim();
+      if (!username) return;
+
+      try {
+        await fetchSupabase('usuarios_instagram', {
+          method: 'POST',
+          body: JSON.stringify({ username })
         });
-    </script>
+
+        input.value = '';
+        await cargarParticipantes();
+      } catch (err) {
+        console.error('Error al agregar:', err);
+      }
+    }
+
+    async function eliminarGanador(ganador) {
+      try {
+        await fetchSupabase(`usuarios_instagram?id=eq.${ganador.id}`, { method: 'DELETE' });
+      } catch (err) {
+        console.error('Error al eliminar:', err);
+      }
+    }
+
+    function startBlinkingLights() {
+      stopBlinkingLights();
+      blinkPhase = 0;
+
+      blinkInterval = setInterval(() => {
+        const bulbs = document.querySelectorAll('[data-bulb="1"]');
+        if (!bulbs.length) return;
+
+        blinkPhase++;
+        bulbs.forEach((b, idx) => {
+          const isOn = (idx % 2) === (blinkPhase % 2);
+          b.setAttribute('opacity', isOn ? '1' : '0.32');
+          b.setAttribute('r', isOn ? '8.2' : '7.0');
+        });
+      }, 120);
+    }
+
+    function stopBlinkingLights() {
+      if (blinkInterval) {
+        clearInterval(blinkInterval);
+        blinkInterval = null;
+      }
+      const bulbs = document.querySelectorAll('[data-bulb="1"]');
+      bulbs.forEach((b) => {
+        b.setAttribute('opacity', '1');
+        b.setAttribute('r', '7.5');
+      });
+    }
+
+    async function triggerPointerTicks(times = 3) {
+      const pointer = document.getElementById('pointerEl');
+      if (!pointer) return;
+
+      for (let i = 0; i < times; i++) {
+        pointer.classList.remove('pointer-tick');
+        void pointer.offsetWidth;
+        pointer.classList.add('pointer-tick');
+        await new Promise(r => setTimeout(r, 120));
+      }
+      pointer.classList.remove('pointer-tick');
+    }
+
+    function renderizarRuleta() {
+      stopBlinkingLights();
+      const svg = document.getElementById('wheelSVG');
+      svg.innerHTML = '';
+
+      const NS = 'http://www.w3.org/2000/svg';
+      const cx = 260, cy = 260;
+      const R_OUT = 248, R_RIM = 234, R_SEG = 205;
+
+      const el = (name, attrs = {}) => {
+        const node = document.createElementNS(NS, name);
+        Object.entries(attrs).forEach(([k, v]) => node.setAttribute(k, v));
+        return node;
+      };
+
+      const clamp = (n) => Math.max(0, Math.min(255, n));
+      const hexToRgb = (hex) => {
+        const h = hex.replace('#','').trim();
+        const full = h.length === 3 ? h.split('').map(ch => ch+ch).join('') : h;
+        const num = parseInt(full, 16);
+        return { r: (num>>16)&255, g: (num>>8)&255, b: num&255 };
+      };
+      const shade = (hex, amt) => {
+        const {r,g,b} = hexToRgb(hex);
+        return `rgb(${clamp(r+amt)},${clamp(g+amt)},${clamp(b+amt)})`;
+      };
+
+      const defs = el('defs');
+
+      const shadow = el('filter', { id:'wheelShadow', x:'-30%', y:'-30%', width:'160%', height:'160%' });
+      shadow.appendChild(el('feDropShadow', { dx:'0', dy:'22', stdDeviation:'16', 'flood-color':'rgba(0,0,0,0.28)' }));
+      defs.appendChild(shadow);
+
+      // Aro TEAL
+      const rim = el('radialGradient', { id:'rimTeal', cx:'35%', cy:'30%', r:'80%' });
+      rim.appendChild(el('stop', { offset:'0%',  'stop-color':'#93F0E0' }));
+      rim.appendChild(el('stop', { offset:'30%', 'stop-color':'#2C9F90' }));
+      rim.appendChild(el('stop', { offset:'70%', 'stop-color':'#0B4F49' }));
+      rim.appendChild(el('stop', { offset:'100%','stop-color':'#083B37' }));
+      defs.appendChild(rim);
+
+      const rimGlow = el('filter', { id:'rimGlow', x:'-30%', y:'-30%', width:'160%', height:'160%' });
+      rimGlow.appendChild(el('feDropShadow', { dx:'0', dy:'0', stdDeviation:'10', 'flood-color':'rgba(44,159,144,0.28)' }));
+      defs.appendChild(rimGlow);
+
+      const glass = el('radialGradient', { id:'glassTop', cx:'32%', cy:'25%', r:'75%' });
+      glass.appendChild(el('stop', { offset:'0%', 'stop-color':'rgba(255,255,255,0.55)' }));
+      glass.appendChild(el('stop', { offset:'40%', 'stop-color':'rgba(255,255,255,0.12)' }));
+      glass.appendChild(el('stop', { offset:'100%','stop-color':'rgba(255,255,255,0)' }));
+      defs.appendChild(glass);
+
+      const vignette = el('radialGradient', { id:'vig', cx:'50%', cy:'50%', r:'55%' });
+      vignette.appendChild(el('stop', { offset:'55%','stop-color':'rgba(0,0,0,0)' }));
+      vignette.appendChild(el('stop', { offset:'100%','stop-color':'rgba(0,0,0,0.40)' }));
+      defs.appendChild(vignette);
+
+      const bulbGrad = el('radialGradient', { id:'bulb', cx:'35%', cy:'35%', r:'70%' });
+      bulbGrad.appendChild(el('stop', { offset:'0%', 'stop-color':'#ffffff' }));
+      bulbGrad.appendChild(el('stop', { offset:'55%','stop-color':'#fff2a8' }));
+      bulbGrad.appendChild(el('stop', { offset:'100%','stop-color':'#ffd24a' }));
+      defs.appendChild(bulbGrad);
+
+      const bulbGlow = el('filter', { id:'bulbGlow', x:'-80%', y:'-80%', width:'260%', height:'260%' });
+      bulbGlow.appendChild(el('feDropShadow', { dx:'0', dy:'0', stdDeviation:'8', 'flood-color':'rgba(255,210,74,0.55)' }));
+      defs.appendChild(bulbGlow);
+
+      svg.appendChild(defs);
+
+      svg.appendChild(el('circle', {
+        cx, cy, r: R_OUT,
+        fill: 'rgba(255,255,255,0.10)',
+        stroke: 'rgba(255,255,255,0.18)',
+        'stroke-width': '2',
+        filter: 'url(#wheelShadow)'
+      }));
+
+      svg.appendChild(el('circle', {
+        cx, cy, r: R_RIM,
+        fill: 'none',
+        stroke: 'url(#rimTeal)',
+        'stroke-width': '34',
+        filter: 'url(#rimGlow)'
+      }));
+
+      const bulbs = 14;
+      for (let i = 0; i < bulbs; i++) {
+        const a = (i * (360 / bulbs) - 90) * Math.PI / 180;
+        const br = R_OUT - 12;
+        const bx = cx + br * Math.cos(a);
+        const by = cy + br * Math.sin(a);
+
+        svg.appendChild(el('circle', {
+          cx: bx, cy: by, r: 7.5,
+          fill: 'url(#bulb)',
+          stroke: 'rgba(255,255,255,0.55)',
+          'stroke-width': '1.2',
+          filter: 'url(#bulbGlow)',
+          opacity: '1',
+          'data-bulb': '1'
+        }));
+      }
+
+      if (participantes.length === 0) {
+        svg.appendChild(el('circle', { cx, cy, r: R_SEG, fill: 'rgba(255,255,255,0.88)' }));
+        const t = el('text', {
+          x: cx, y: cy,
+          'text-anchor':'middle',
+          'dominant-baseline':'middle',
+          fill:'#111827',
+          'font-size':'22',
+          'font-weight':'800',
+          opacity:'0.65'
+        });
+        t.textContent = 'Sin participantes';
+        svg.appendChild(t);
+
+        svg.appendChild(el('circle', { cx, cy, r: R_SEG, fill:'url(#glassTop)', opacity:'0.95' }));
+        svg.appendChild(el('circle', { cx, cy, r: R_SEG, fill:'url(#vig)', opacity:'0.42' }));
+        return;
+      }
+
+      const total = participantes.length;
+      const anguloSegmento = 360 / total;
+      const mostrarLabels = total <= 90;
+
+      let fontSize;
+      if (total <= 12) fontSize = 16;
+      else if (total <= 30) fontSize = 13;
+      else if (total <= 80) fontSize = 11;
+      else if (total <= 160) fontSize = 9;
+      else if (total <= 320) fontSize = 8;
+      else fontSize = 7;
+
+      for (let i = 0; i < total; i++) {
+        const base = COLORES[i % COLORES.length];
+        const grad = el('radialGradient', {
+          id: `seg${i}`,
+          cx: `${cx}`, cy: `${cy}`, r: `${R_SEG}`,
+          gradientUnits: 'userSpaceOnUse'
+        });
+        grad.appendChild(el('stop', { offset:'0%',   'stop-color': shade(base, -20) }));
+        grad.appendChild(el('stop', { offset:'58%',  'stop-color': base }));
+        grad.appendChild(el('stop', { offset:'100%', 'stop-color': shade(base, +45) }));
+        defs.appendChild(grad);
+      }
+
+      participantes.forEach((p, i) => {
+        const a0 = i * anguloSegmento - 90;
+        const a1 = a0 + anguloSegmento;
+
+        const x1 = cx + R_SEG * Math.cos(a0 * Math.PI/180);
+        const y1 = cy + R_SEG * Math.sin(a0 * Math.PI/180);
+        const x2 = cx + R_SEG * Math.cos(a1 * Math.PI/180);
+        const y2 = cy + R_SEG * Math.sin(a1 * Math.PI/180);
+
+        const largeArc = anguloSegmento > 180 ? 1 : 0;
+
+        svg.appendChild(el('path', {
+          d: `M ${cx} ${cy} L ${x1} ${y1} A ${R_SEG} ${R_SEG} 0 ${largeArc} 1 ${x2} ${y2} Z`,
+          fill: `url(#seg${i})`,
+          stroke: 'rgba(255,255,255,0.18)',
+          'stroke-width': total > 140 ? '0.8' : '1.4'
+        }));
+
+        const sx = cx + R_SEG * Math.cos(a0 * Math.PI/180);
+        const sy = cy + R_SEG * Math.sin(a0 * Math.PI/180);
+        svg.appendChild(el('line', {
+          x1: cx, y1: cy, x2: sx, y2: sy,
+          stroke: 'rgba(255,255,255,0.10)',
+          'stroke-width': total > 120 ? '0.6' : '1'
+        }));
+
+        if (mostrarLabels) {
+          const mid = a0 + anguloSegmento/2;
+          const dist = total > 200 ? 0.76 : 0.70;
+          const tx = cx + (R_SEG * dist) * Math.cos(mid * Math.PI/180);
+          const ty = cy + (R_SEG * dist) * Math.sin(mid * Math.PI/180);
+
+          let displayName = p.username;
+          if (total > 300 && displayName.length > 12) displayName = displayName.substring(0, 10) + '..';
+          else if (total > 150 && displayName.length > 15) displayName = displayName.substring(0, 13) + '..';
+
+          const text = el('text', {
+            x: tx, y: ty,
+            fill: 'white',
+            'text-anchor':'middle',
+            'dominant-baseline':'middle',
+            'font-size': fontSize,
+            'font-weight': '800',
+            transform: `rotate(${mid}, ${tx}, ${ty})`,
+            style: `paint-order: stroke; stroke: rgba(0,0,0,0.35); stroke-width: 3px;`
+          });
+          text.textContent = `@${displayName}`;
+          svg.appendChild(text);
+        }
+      });
+
+      svg.appendChild(el('circle', { cx, cy, r: R_SEG, fill:'url(#glassTop)', opacity:'0.95' }));
+      svg.appendChild(el('circle', { cx, cy, r: R_SEG, fill:'url(#vig)', opacity:'0.42' }));
+    }
+
+    function calcularRotacionHoraria(indiceGanador, totalParticipantes) {
+      const anguloSegmento = 360 / totalParticipantes;
+      const anguloGanador = indiceGanador * anguloSegmento;
+      const girosCompletos = 6 + Math.floor(Math.random() * 3);
+      return anguloActual + (girosCompletos * 360) + (360 - anguloGanador) + (anguloSegmento / 2);
+    }
+
+    function animarRuletaLineal(anguloFinal, duracion) {
+      const svg = document.getElementById('wheelSVG');
+      svg.style.transitionDuration = `${duracion}s`;
+      svg.style.transform = `rotate(${anguloFinal}deg)`;
+      anguloActual = anguloFinal % 360;
+    }
+
+    async function iniciarSorteo() {
+      if (sorteando || participantes.length === 0) return;
+      sorteando = true;
+
+      const btn = document.getElementById('drawButton');
+      btn.disabled = true;
+      btn.textContent = 'Sorteando...';
+
+      document.getElementById('loadingSpinner').classList.remove('hidden');
+      document.getElementById('winnerContainer').innerHTML = '';
+
+      await new Promise(r => setTimeout(r, 700));
+
+      const { ganador, indice } = seleccionarGanadorSeguro(participantes);
+      const anguloFinal = calcularRotacionHoraria(indice, participantes.length);
+      const duracionGiro = 6;
+
+      document.getElementById('loadingSpinner').classList.add('hidden');
+
+      startBlinkingLights();
+      animarRuletaLineal(anguloFinal, duracionGiro);
+
+      await new Promise(r => setTimeout(r, duracionGiro * 1000));
+
+      stopBlinkingLights();
+      await triggerPointerTicks(3);
+
+      await new Promise(r => setTimeout(r, 180));
+
+      mostrarGanador(ganador);
+
+      await eliminarGanador(ganador);
+      await cargarParticipantes();
+
+      sorteando = false;
+      btn.disabled = false;
+      btn.textContent = 'GIRAR';
+    }
+
+    // ✅ GANADOR: ahora muestra el comentario (si existe) debajo del username
+    function mostrarGanador(ganador) {
+      const container = document.getElementById('winnerContainer');
+
+      const username = escapeHtml(ganador?.username || '');
+      const comment = getWinnerComment(ganador);
+      const commentBlock = comment ? `
+          <div class="mt-6 mx-auto max-w-2xl">
+            <div class="rounded-2xl px-6 py-5 border border-emerald-200/60 bg-white/65 backdrop-blur-sm"
+                 style="box-shadow: inset 0 1px 0 rgba(255,255,255,.85);">
+              <p class="text-xs font-black tracking-widest uppercase"
+                 style="color: rgba(11,79,73,.65);">Comentario ganador</p>
+              <p class="mt-2 text-lg md:text-xl font-semibold text-slate-800 leading-snug">
+                “${escapeHtml(comment)}”
+              </p>
+
+            </div>
+          </div>
+        ` : '';
+
+      container.innerHTML = `
+        <div class="winner-reveal rounded-3xl p-10 text-center max-w-2xl shadow-2xl border"
+             style="background: linear-gradient(135deg, rgba(255,255,255,.90), rgba(255,255,255,.78));
+                    border-color: rgba(121,181,156,.40);">
+          <p class="text-slate-700 text-lg font-extrabold mb-2">Ganador</p>
+          <p class="text-5xl md:text-6xl font-black" style="color: var(--deep);">
+            @${username}
+          </p>
+          ${commentBlock}
+        </div>
+      `;
+    }
+
+    function renderizarParticipantes() {
+      const container = document.getElementById('participantsList');
+      document.getElementById('totalParticipants').textContent = participantes.length;
+
+      if (participantes.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full text-center py-12 text-slate-600">
+            <p class="text-xl font-black" style="color: var(--deep);">No hay participantes</p>
+            <p class="text-slate-500 mt-2 font-semibold">Agrega usuarios para empezar.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = participantes.map((p, i) => `
+        <div class="rounded-xl p-3 text-center font-semibold"
+             style="background: rgba(255,255,255,.78); border: 1px solid rgba(121,181,156,.30);">
+          <div class="text-xs text-slate-500 mb-1 font-bold">#${i + 1}</div>
+          <div class="text-sm truncate" style="color: var(--deep); font-weight: 800;">@${p.username}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderizarTodo() {
+      renderizarRuleta();
+      renderizarParticipantes();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('usernameInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') agregarParticipante();
+      });
+      cargarParticipantes();
+    });
+  </script>
 </body>
 </html>
